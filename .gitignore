@@ -59,6 +59,12 @@ playground.xcworkspace
 # Add this line if you want to avoid checking in source code from the Xcode workspace
 # *.xcworkspace
 
+# CocoaPods
+Pods
+!Podfile
+Podfile.lock
+!Manifest.lock
+
 # Carthage
 #
 # Add this line if you want to avoid checking in source code from Carthage dependencies.
