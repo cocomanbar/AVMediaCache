@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'AVMediaCache'
-  s.version          = '1.0.0'
+  s.version          = 'v1.0.0'
   s.summary          = 'A media cahce framework.'
   s.description      = <<-DESC
   a smart media cahce framework, help to cache media data when you see media play in your app at the same time.
