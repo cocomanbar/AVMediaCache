@@ -108,7 +108,7 @@ public class AVMediaCache: NSObject {
 // MARK: - If needed cache
 public extension AVMediaCache {
     
-    func mediaForAsset(url: URL, isPreload: Bool = false) -> AVURLAsset {
+    func mediaForAsset(url: URL) -> AVURLAsset {
         
         lock()
         var asset: AVURLAsset
@@ -130,7 +130,7 @@ public extension AVMediaCache {
             
             // cache resource
             var internalProxies = [AVMediaResourceProxy]()
-            let internalProxy = AVMediaResourceProxy(url: url, isPreload: isPreload, target: delegate)
+            let internalProxy = AVMediaResourceProxy(url: url, target: delegate)
             internalProxies.append(internalProxy)
             if var resourceProxies = currentReousrces[url] {
                 resourceProxies.append(contentsOf: internalProxies)
@@ -143,9 +143,9 @@ public extension AVMediaCache {
         return asset
     }
     
-    func mediaForPlayerItem(url: URL, isPreload: Bool = false) -> AVPlayerItem {
+    func mediaForPlayerItem(url: URL) -> AVPlayerItem {
         
-        AVPlayerItem(asset: mediaForAsset(url: url, isPreload: isPreload))
+        AVPlayerItem(asset: mediaForAsset(url: url))
     }
 }
 

@@ -10,12 +10,10 @@ import Foundation
 public struct AVMediaResourceProxy {
     
     public var url: URL
-    public var isPreload = false
     public weak var target: AnyObject?
     
-    public init(url: URL, isPreload: Bool = false, target: AnyObject? = nil) {
+    public init(url: URL, target: AnyObject? = nil) {
         self.url = url
-        self.isPreload = isPreload
         self.target = target
     }
     

@@ -64,6 +64,12 @@ class AVMediaResourceLoader: NSObject {
         contentInformationRequest.isByteRangeAccessSupported = reader.response?.contentRangeString != nil
     }
     
+    func cancelLoading() {
+        for element in mediaReaders {
+            element.key.close()
+        }
+    }
+    
     // MARK: - Lazy
     
     private lazy var mediaReaders: [AVMediaDataReader: AVAssetResourceLoadingRequest] = {
@@ -127,15 +133,5 @@ extension AVMediaResourceLoader: AVAssetResourceLoaderDelegate {
     
     func resourceLoader(_ resourceLoader: AVAssetResourceLoader, didCancel loadingRequest: AVAssetResourceLoadingRequest) {
         cancelLoadingRequest(loadingRequest)
-    }
-}
-
-// MARK: - AVAssetResourceCancelLoaderDelegate
-extension AVMediaResourceLoader: AVAssetResourceCancelLoaderDelegate {
-    
-    func cancelLoading() {
-        for element in mediaReaders {
-            element.key.close()
-        }
     }
 }

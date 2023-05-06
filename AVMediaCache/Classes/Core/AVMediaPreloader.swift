@@ -25,7 +25,6 @@ public class AVMediaPreloader: NSObject {
     
     public private(set) var URLs = [URL]()
     public private(set) var URLStates = [URL: AVMediaPreloadState]()
-    
     public private(set) weak var delegate: AVMediaPreloadDelegate?
     
     private var dataLoader: AVMediaDataLoader?
@@ -82,12 +81,11 @@ public class AVMediaPreloader: NSObject {
         internalQueue.async { [weak self] in
             guard let self = self else { return }
             
-            if self.working {
-                return
-            }
             guard let url = self.URLs.first else {
+                self.working = false
                 return
             }
+            self.working = true
             self.URLs.removeFirst()
             let request = AVMediaDataRequest(url: url, header: nil)
             self.dataLoader = AVMediaDataLoader(request)
