@@ -1,5 +1,5 @@
 //
-//  AVMediaPreloader.swift
+//  AVMediaCachePreloader.swift
 //  AVMediaCache
 //
 //  Created by tanxl on 2023/5/1.
@@ -7,38 +7,38 @@
 
 import UIKit
 
-public enum AVMediaPreloadState: Int {
+public enum AVMediaCachePreloadState: Int {
     case notFound
     case waiting
     case loading
     case finished
 }
 
-public protocol AVMediaPreloadDelegate: NSObjectProtocol {
+public protocol AVMediaCachePreloaderDelegate: NSObjectProtocol {
     
-    func mediaPreload(_ preLoader: AVMediaPreloader, didCompleteUrl: URL, error: Error?)
+    func mediaPreload(_ preLoader: AVMediaCachePreloader, didCompleteUrl: URL, error: Error?)
 }
 
-public class AVMediaPreloader: NSObject {
+public class AVMediaCachePreloader: NSObject {
     
-    public var length: Int64 = 5 * 1024 * 1024
+    public var preloadLength: Int64 = 5 * 1024 * 1024
+    public weak var delegate: AVMediaCachePreloaderDelegate?
     
     public private(set) var URLs = [URL]()
-    public private(set) var URLStates = [URL: AVMediaPreloadState]()
-    public private(set) weak var delegate: AVMediaPreloadDelegate?
+    public private(set) var URLStates = [URL: AVMediaCachePreloadState]()
     
     private var dataLoader: AVMediaDataLoader?
     private var internalQueue: DispatchQueue
     private var working: Bool
     
-    public init(_ delegate: AVMediaPreloadDelegate?) {
+    public override init() {
         
         self.working = false
-        self.delegate = delegate
-        self.internalQueue = DispatchQueue(label: "AVMediaCache_internalQueue", qos: .default)
+        self.internalQueue = DispatchQueue(label: "AVMediaCachePreloader_internalQueue", qos: .default)
+        super.init()
     }
     
-    public func preloadStateForUrl(_ url: URL?) -> AVMediaPreloadState {
+    public func preloadStateForUrl(_ url: URL?) -> AVMediaCachePreloadState {
         guard let url = url else { return .notFound }
         let state = URLStates[url] ?? .notFound
         return state
@@ -95,7 +95,7 @@ public class AVMediaPreloader: NSObject {
     }
 }
 
-extension AVMediaPreloader: AVMediaDataLoadDelegate {
+extension AVMediaCachePreloader: AVMediaDataLoadDelegate {
     
     func dataLoader(_ loader: AVMediaDataLoader, didFailWithError error: Error) {
         internalQueue.async { [weak self] in
@@ -110,7 +110,7 @@ extension AVMediaPreloader: AVMediaDataLoadDelegate {
             guard let self = self else { return }
             let url = loader.request.url
             let item = AVMediaCache.shared.cacheItemWithURL(url)
-            if item?.cacheLength ?? 0 >= self.length {
+            if item?.cacheLength ?? 0 >= self.preloadLength {
                 loader.close()
                 loader.delegate = nil
                 self.dataLoader = nil

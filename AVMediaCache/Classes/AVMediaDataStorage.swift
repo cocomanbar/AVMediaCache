@@ -10,18 +10,8 @@ import UIKit
 class AVMediaDataStorage: NSObject {
     
     static let shared = AVMediaDataStorage()
-    
-    // MARK: - Init
-    
+        
     private override init() {}
-    
-    override class func copy() -> Any {
-        self
-    }
-    
-    override class func mutableCopy() -> Any {
-        self
-    }
     
     // MARK: -
     

@@ -12,7 +12,7 @@ import AVMediaCache
 
 class ViewController: UIViewController {
 
-    var preloader: AVMediaPreloader?
+    var preloader: AVMediaCachePreloader?
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -63,14 +63,15 @@ class ViewController: UIViewController {
         ]
         
         let URLs = urls.map({ URL(string: $0) }).compactMap({ $0 })
-        preloader = AVMediaPreloader(self)
+        preloader = AVMediaCachePreloader()
+        preloader?.delegate = self
         preloader?.preloadUrls(URLs)
     }
 }
 
-extension ViewController: AVMediaPreloadDelegate {
+extension ViewController: AVMediaCachePreloaderDelegate {
     
-    func mediaPreload(_ preLoader: AVMediaPreloader, didCompleteUrl: URL, error: Error?) {
+    func mediaPreload(_ preLoader: AVMediaCachePreloader, didCompleteUrl: URL, error: Error?) {
         print("didCompleteUrl === \(didCompleteUrl)")
         print("error === \(String(describing: error))")
         print(" ===================== ")

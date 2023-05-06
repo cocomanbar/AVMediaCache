@@ -30,9 +30,6 @@ class AVMediaDownload: NSObject {
     
     static let download = AVMediaDownload()
     
-    override class func copy() -> Any { self }
-    override class func mutableCopy() -> Any { self }
-    
     private override init() {
         super.init()
         

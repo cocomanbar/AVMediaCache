@@ -31,14 +31,6 @@ class AVMediaDataUnitPool: NSObject {
     
     static let shared = AVMediaDataUnitPool()
     
-    override class func copy() -> Any {
-        self
-    }
-    
-    override class func mutableCopy() -> Any {
-        self
-    }
-    
     private override init() {
         super.init()
     
