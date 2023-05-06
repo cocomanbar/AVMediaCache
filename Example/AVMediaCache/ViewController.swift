@@ -71,9 +71,11 @@ class ViewController: UIViewController {
 
 extension ViewController: AVMediaCachePreloaderDelegate {
     
-    func mediaPreload(_ preLoader: AVMediaCachePreloader, didCompleteUrl: URL, error: Error?) {
-        print("didCompleteUrl === \(didCompleteUrl)")
-        print("error === \(String(describing: error))")
-        print(" ===================== ")
+    func mediaPreload(_ preLoader: AVMediaCachePreloader, completeUrl: URL, error: Error?) {
+        print("didCompleteUrl === \(completeUrl) error === \(String(describing: error))")
+    }
+    
+    func mediaPreload(_ preLoader: AVMediaCachePreloader, currentUrl: URL) {
+        print("currentUrl === \(currentUrl)")
     }
 }

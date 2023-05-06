@@ -18,6 +18,7 @@
 		615A4CC629FCFDAA00B81B63 /* FeedController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 615A4CC529FCFDAA00B81B63 /* FeedController.swift */; };
 		615A4CC929FCFDE400B81B63 /* FeedModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 615A4CC829FCFDE400B81B63 /* FeedModel.swift */; };
 		615A4CCB29FCFDFB00B81B63 /* FeedCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 615A4CCA29FCFDFB00B81B63 /* FeedCell.swift */; };
+		618DBDCD2A0633E600853569 /* libswiftCoreGraphics.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 618DBDCC2A0633E600853569 /* libswiftCoreGraphics.tbd */; };
 		CA1A27288581430BA3F2E296 /* libPods-AVMediaCache_Tests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D9D1C1D0B59E2D57A08CE423 /* libPods-AVMediaCache_Tests.a */; };
 /* End PBXBuildFile section */
 
@@ -52,6 +53,7 @@
 		615A4CC529FCFDAA00B81B63 /* FeedController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedController.swift; sourceTree = "<group>"; };
 		615A4CC829FCFDE400B81B63 /* FeedModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedModel.swift; sourceTree = "<group>"; };
 		615A4CCA29FCFDFB00B81B63 /* FeedCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedCell.swift; sourceTree = "<group>"; };
+		618DBDCC2A0633E600853569 /* libswiftCoreGraphics.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libswiftCoreGraphics.tbd; path = usr/lib/swift/libswiftCoreGraphics.tbd; sourceTree = SDKROOT; };
 		75EB876D33A813F9058A6A7B /* Pods-AVMediaCache_Example.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AVMediaCache_Example.release.xcconfig"; path = "Target Support Files/Pods-AVMediaCache_Example/Pods-AVMediaCache_Example.release.xcconfig"; sourceTree = "<group>"; };
 		AF2DF6795A63E6A10CDA8F9F /* Pods-AVMediaCache_Example.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AVMediaCache_Example.debug.xcconfig"; path = "Target Support Files/Pods-AVMediaCache_Example/Pods-AVMediaCache_Example.debug.xcconfig"; sourceTree = "<group>"; };
 		BF02F9755FDD9B0AEEB49022 /* AVMediaCache.podspec */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = AVMediaCache.podspec; path = ../AVMediaCache.podspec; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.ruby; };
@@ -63,6 +65,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				618DBDCD2A0633E600853569 /* libswiftCoreGraphics.tbd in Frameworks */,
 				360D3B46DB426A31D6E2B5BB /* libPods-AVMediaCache_Example.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -81,6 +84,7 @@
 		07D15DAA9E4ACB72615CB879 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				618DBDCC2A0633E600853569 /* libswiftCoreGraphics.tbd */,
 				43B1F63DB1AC832CD167787D /* libPods-AVMediaCache_Example.a */,
 				D9D1C1D0B59E2D57A08CE423 /* libPods-AVMediaCache_Tests.a */,
 			);
@@ -500,6 +504,10 @@
 				INFOPLIST_FILE = AVMediaCache/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SDKROOT)/usr/lib/swift",
+				);
 				MODULE_NAME = ExampleApp;
 				PRODUCT_BUNDLE_IDENTIFIER = "org.cocoapods.demo.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -524,6 +532,10 @@
 				INFOPLIST_FILE = AVMediaCache/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SDKROOT)/usr/lib/swift",
+				);
 				MODULE_NAME = ExampleApp;
 				PRODUCT_BUNDLE_IDENTIFIER = "org.cocoapods.demo.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";

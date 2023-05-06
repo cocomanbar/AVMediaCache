@@ -2,21 +2,15 @@
 //  AVMediaCachePreloader.swift
 //  AVMediaCache
 //
-//  Created by tanxl on 2023/5/1.
+//  Created by tanxl on 2023/4/20.
 //
 
 import UIKit
 
-public enum AVMediaCachePreloadState: Int {
-    case notFound
-    case waiting
-    case loading
-    case finished
-}
-
 public protocol AVMediaCachePreloaderDelegate: NSObjectProtocol {
     
-    func mediaPreload(_ preLoader: AVMediaCachePreloader, didCompleteUrl: URL, error: Error?)
+    func mediaPreload(_ preLoader: AVMediaCachePreloader, currentUrl: URL)
+    func mediaPreload(_ preLoader: AVMediaCachePreloader, completeUrl: URL, error: Error?)
 }
 
 public class AVMediaCachePreloader: NSObject {
@@ -25,7 +19,6 @@ public class AVMediaCachePreloader: NSObject {
     public weak var delegate: AVMediaCachePreloaderDelegate?
     
     public private(set) var URLs = [URL]()
-    public private(set) var URLStates = [URL: AVMediaCachePreloadState]()
     
     private var dataLoader: AVMediaDataLoader?
     private var internalQueue: DispatchQueue
@@ -38,12 +31,6 @@ public class AVMediaCachePreloader: NSObject {
         super.init()
     }
     
-    public func preloadStateForUrl(_ url: URL?) -> AVMediaCachePreloadState {
-        guard let url = url else { return .notFound }
-        let state = URLStates[url] ?? .notFound
-        return state
-    }
-    
     public func preloadUrls(_ urls: [URL]?) {
         guard let urls = urls else { return }
         
@@ -53,11 +40,28 @@ public class AVMediaCachePreloader: NSObject {
                 if !url.av.canProxy() {
                     continue
                 }
-                if self.URLs.contains(url) || (self.URLStates[url] ?? .notFound) != .notFound {
+                if self.URLs.contains(url) {
                     continue
                 }
                 self.URLs.append(url)
-                self.URLStates[url] = .waiting
+            }
+        }
+        
+        preloadNextIfNeeded()
+    }
+    
+    public func cancelUrls(_ urls: [URL]?) {
+        guard let urls = urls else { return }
+        
+        internalQueue.async { [weak self] in
+            guard let self = self else { return }
+            for url in urls {
+                if !url.av.canProxy() {
+                    continue
+                }
+                if let index = self.URLs.firstIndex(where: { $0 == url }) {
+                    self.URLs.remove(at: index)
+                }
             }
         }
         
@@ -69,7 +73,6 @@ public class AVMediaCachePreloader: NSObject {
         internalQueue.async { [weak self] in
             guard let self = self else { return }
             self.URLs.removeAll()
-            self.URLStates.removeAll()
             self.dataLoader?.close()
             self.dataLoader = nil
             self.working = false
@@ -87,6 +90,7 @@ public class AVMediaCachePreloader: NSObject {
             }
             self.working = true
             self.URLs.removeFirst()
+            self.delegate?.mediaPreload(self, currentUrl: url)
             let request = AVMediaDataRequest(url: url, header: nil)
             self.dataLoader = AVMediaDataLoader(request)
             self.dataLoader?.delegate = self
@@ -100,7 +104,7 @@ extension AVMediaCachePreloader: AVMediaDataLoadDelegate {
     func dataLoader(_ loader: AVMediaDataLoader, didFailWithError error: Error) {
         internalQueue.async { [weak self] in
             guard let self = self else { return }
-            self.delegate?.mediaPreload(self, didCompleteUrl: loader.request.url, error: error)
+            self.delegate?.mediaPreload(self, completeUrl: loader.request.url, error: error)
             self.preloadNextIfNeeded()
         }
     }
@@ -110,12 +114,19 @@ extension AVMediaCachePreloader: AVMediaDataLoadDelegate {
             guard let self = self else { return }
             let url = loader.request.url
             let item = AVMediaCache.shared.cacheItemWithURL(url)
-            if item?.cacheLength ?? 0 >= self.preloadLength {
+            let next = {
                 loader.close()
                 loader.delegate = nil
                 self.dataLoader = nil
-                self.delegate?.mediaPreload(self, didCompleteUrl: loader.request.url, error: nil)
+                self.delegate?.mediaPreload(self, completeUrl: loader.request.url, error: nil)
                 self.preloadNextIfNeeded()
+            }
+            if (item?.totalLength ?? 0 > 0) && (item?.totalLength ?? 0 == item?.cacheLength ?? 0) && (item?.totalLength ?? 0 < self.preloadLength) {
+                next()
+                return
+            }
+            if item?.cacheLength ?? 0 >= self.preloadLength {
+                next()
             }
         }
     }
