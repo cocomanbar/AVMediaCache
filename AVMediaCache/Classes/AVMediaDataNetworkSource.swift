@@ -58,31 +58,31 @@ class AVMediaDataNetworkSource: NSObject, AVMediaDataSource {
         super.init()
     }
     
-    deinit {
-        
-    }
-    
-    
     func prepareDelegate(_ delegate: AVMediaDataNetworkSourceDelegate, delegateQueue: DispatchQueue) {
         self.delegate = delegate
         self.delegateQueue = delegateQueue
     }
     
     func prepare() {
-        lock()
-        if isClosed || calledPrepare{
+        defer {
             unlock()
+        }
+        lock()
+        
+        if isClosed || calledPrepare{
             return
         }
         calledPrepare = true
         downlaodTask = AVMediaDownload.download.downloadWithRequest(request, delegate: self)
-        unlock()
     }
     
     func close() {
-        lock()
-        if isClosed {
+        defer {
             unlock()
+        }
+        lock()
+        
+        if isClosed {
             return
         }
         isClosed = true
@@ -92,19 +92,21 @@ class AVMediaDataNetworkSource: NSObject, AVMediaDataSource {
         }
         destoryReadingHandle()
         destoryWritingHandle()
-        unlock()
     }
     
     func readDataOfLength(_ length: Int64?) -> Data? {
         
         guard let length = length, length > 0 else { return nil }
         
+        defer {
+            unlock()
+        }
         lock()
+        
         var data: Data?
         var err: Error?
         
         if isClosed || isFinished || error != nil {
-            unlock()
             return data
         }
         if readedLength >= downloadLength {
@@ -113,7 +115,6 @@ class AVMediaDataNetworkSource: NSObject, AVMediaDataSource {
             } else {
                 callHasAvailableData = true
             }
-            unlock()
             return data
         }
         do {
@@ -131,7 +132,6 @@ class AVMediaDataNetworkSource: NSObject, AVMediaDataSource {
                                 code: ErrorCode,
                                 userInfo: [NSLocalizedDescriptionKey : err.localizedDescription])
             callbackForFailed(error)
-            unlock()
             return data
         }
         if let data = data {
@@ -141,7 +141,6 @@ class AVMediaDataNetworkSource: NSObject, AVMediaDataSource {
                 destoryReadingHandle()
             }
         }
-        unlock()
         return data
     }
     
@@ -218,7 +217,11 @@ class AVMediaDataNetworkSource: NSObject, AVMediaDataSource {
 extension AVMediaDataNetworkSource: AVMediaDownloadDelegate {
     
     func mediaDownload(_ download: AVMediaDownload, didCompleteError error: Error?) {
+        defer {
+            unlock()
+        }
         lock()
+        
         downloadCalledComplete = true
         destoryWritingHandle()
         if isClosed {
@@ -233,7 +236,6 @@ extension AVMediaDataNetworkSource: AVMediaDownloadDelegate {
             }
         } else if let contentRange = response?.contentRange, downloadLength >= contentRange.length() {
             guard let delegate = delegate, let delegateQueue = delegateQueue else {
-                unlock()
                 return
             }
             delegateQueue.async { [weak self] in
@@ -244,13 +246,15 @@ extension AVMediaDataNetworkSource: AVMediaDownloadDelegate {
         } else {
             // not anything to do
         }
-        unlock()
     }
     
     func mediaDownload(_ download: AVMediaDownload, didReceiveResponse response: AVMediaDataResponse?) {
-        lock()
-        if isClosed || self.error != nil {
+        defer {
             unlock()
+        }
+        lock()
+        
+        if isClosed || self.error != nil {
             return
         }
         self.response = response
@@ -264,13 +268,15 @@ extension AVMediaDataNetworkSource: AVMediaDownloadDelegate {
         self.readingHandle = FileHandle(forReadingAtPath: unitItem.absolutePath)
         
         callbackForPrepared()
-        unlock()
     }
     
     func mediaDownload(_ download: AVMediaDownload, didReceiveData data: Data) {
-        lock()
-        if isClosed || self.error != nil {
+        defer {
             unlock()
+        }
+        lock()
+        
+        if isClosed || self.error != nil {
             return
         }
         var err: Error?
@@ -298,7 +304,6 @@ extension AVMediaDataNetworkSource: AVMediaDownloadDelegate {
             callHasAvailableData = true
             callbackForHasAvailableData()
         }
-        unlock()
     }
 }
 

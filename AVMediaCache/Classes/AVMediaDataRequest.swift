@@ -24,11 +24,6 @@ class AVMediaDataRequest: NSObject {
         commonInit()
     }
     
-    deinit {
-        
-    }
-    
-    
     func newRequestWithRange(_ range: AVRange) -> AVMediaDataRequest {
 
         let headers = AVRangeUtil.fillRangeToRequestHeaders(range, header: header)

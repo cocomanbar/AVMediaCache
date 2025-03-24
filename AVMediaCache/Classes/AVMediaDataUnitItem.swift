@@ -32,9 +32,7 @@ class AVMediaDataUnitItem: NSObject {
         self.relativePath = AVMediaPathUtil.converToRelativePath(path)
         self.absolutePath = AVMediaPathUtil.converToAbsoultePath(relativePath)
         self.length = AVMediaPathUtil.sizeAtPath(absolutePath)
-        
         super.init()
-        commonInit()
     }
     
     required init(from decoder: Decoder) throws {
@@ -45,23 +43,16 @@ class AVMediaDataUnitItem: NSObject {
         self.createTimeInterval = try container.decode(Double.self, forKey: .createTimeInterval)
         self.absolutePath = AVMediaPathUtil.converToAbsoultePath(relativePath)
         self.length = AVMediaPathUtil.sizeAtPath(absolutePath)
-        
         super.init()
-        commonInit()
-    }
-    
-    func commonInit() {
-        
-    }
-    
-    deinit {
-        
     }
         
     func updateLength(_ length: Int64) {
+        defer {
+            unlock()
+        }
         lock()
+        
         self.length = length
-        unlock()
     }
 }
 
@@ -86,14 +77,17 @@ extension AVMediaDataUnitItem: Codable {
 extension AVMediaDataUnitItem: NSCopying {
     
     func copy(with zone: NSZone? = nil) -> Any {
+        defer {
+            unlock()
+        }
         lock()
+        
         let unitItem = AVMediaDataUnitItem(path: absolutePath, offset: offset)
         unitItem.relativePath = relativePath
         unitItem.absolutePath = absolutePath
         unitItem.createTimeInterval = createTimeInterval
         unitItem.offset = offset
         unitItem.length = length
-        unlock()
         return unitItem
     }
 }

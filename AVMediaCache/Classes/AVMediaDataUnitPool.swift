@@ -52,10 +52,12 @@ class AVMediaDataUnitPool: NSObject {
 
     
     func unitWithURL(_ url: URL?) -> AVMediaDataUnit? {
+        defer {
+            unlock()
+        }
+        lock()
         
         guard let url = url, !url.absoluteString.isEmpty else { return nil }
-        
-        lock()
         let key = AVMediaURLUtil.shared.keyWithURL(url: url)
         var unit = self.unitQueue.unitWithKey(key)
         if unit == nil {
@@ -65,37 +67,41 @@ class AVMediaDataUnitPool: NSObject {
             setNeedsArchive()
         }
         unit?.workingRetain()
-        unlock()
-        
         return unit
     }
     
     func deleteUnitWithURL(_ url: URL?) {
+        defer {
+            unlock()
+        }
+        lock()
         
         guard let url = url, !url.absoluteString.isEmpty else { return }
-        
-        lock()
         let key = AVMediaURLUtil.shared.keyWithURL(url: url)
         if let unit = self.unitQueue.unitWithKey(key), unit.workingCount <= 0 {
             unit.deleteFiles()
             unitQueue.popUnit(unit)
             setNeedsArchive()
         }
-        unlock()
     }
     
     func totalCacheLength() -> Int64 {
-        
+        defer {
+            unlock()
+        }
         lock()
+        
         var length: Int64 = 0
         let _ = unitQueue.allUnits().map { length += $0.cacheLength() }
-        unlock()
         return length
     }
     
     func totalCacheLengthWithCompleted(_ isCompleted: Bool) -> Int64 {
-        
+        defer {
+            unlock()
+        }
         lock()
+        
         var length: Int64 = 0
         let allUnits = unitQueue.allUnits()
         for unit in allUnits {
@@ -112,33 +118,35 @@ class AVMediaDataUnitPool: NSObject {
                 }
             }
         }
-        unlock()
         return length
     }
     
     func cacheItemWithURL(_ url: URL?) -> AVMediaDataCacheItem? {
-
-        lock()
-        guard let url = url, !url.absoluteString.isEmpty else {
+        defer {
             unlock()
+        }
+        lock()
+        
+        guard let url = url, !url.absoluteString.isEmpty else {
             return nil
         }
         let key = AVMediaURLUtil.shared.keyWithURL(url: url)
         guard let unit = unitQueue.unitWithKey(key) else {
-            unlock()
             return nil
         }
         let cacheItemZones: [AVMediaDataCacheItemZone] = unit.allItems().map { unitItem in
             AVMediaDataCacheItemZone(offset: unitItem.offset, length: unitItem.length)
         }
         let cacheItem = AVMediaDataCacheItem(url: url, totalLength: unit.totalLength, cacheLength: unit.cacheLength(), vaildLength: unit.validLength(), zones: cacheItemZones)
-        unlock()
         return cacheItem
     }
     
     func allCacheItem() -> [AVMediaDataCacheItem] {
-        
+        defer {
+            unlock()
+        }
         lock()
+        
         let units = unitQueue.allUnits()
         let cacheItems = units.compactMap { unit in
             if let cacheItem = cacheItemWithURL(unit.url), !cacheItem.zones.isEmpty {
@@ -146,17 +154,18 @@ class AVMediaDataUnitPool: NSObject {
             }
             return nil
         }
-        unlock()
         return cacheItems
     }
     
     func deleteUnitsWithLength(_ length: Int64) {
+        defer {
+            unlock()
+        }
+        lock()
         
         if length <= 0 {
             return
         }
-        
-        lock()
         
         // ASC sort by lastCreateTime
         let units = unitQueue.allUnits().sorted { unit1, unit2 in
@@ -199,13 +208,14 @@ class AVMediaDataUnitPool: NSObject {
         if needArchive {
             setNeedsArchive()
         }
-        
-        unlock()
     }
     
     func deleteAllUnits() {
-        
+        defer {
+            unlock()
+        }
         lock()
+        
         var needArchive = false
         let units = unitQueue.allUnits()
         for unit in units {
@@ -218,34 +228,40 @@ class AVMediaDataUnitPool: NSObject {
         if needArchive {
             setNeedsArchive()
         }
-        unlock()
     }
     
     // MARK: - Private
     
     private func setNeedsArchive() {
-        
+        defer {
+            unlock()
+        }
         lock()
+        
         expectArchiveIndex += 1
         let expectArchiveIndex = expectArchiveIndex
-        unlock()
         archiveQueue.asyncAfter(deadline: .now() + 3.0) {
+            defer {
+                self.unlock()
+            }
             self.lock()
+            
             if self.expectArchiveIndex == expectArchiveIndex {
                 self.archiveIfNeeded()
             }
-            self.unlock()
         }
     }
     
     private func archiveIfNeeded() {
-        
+        defer {
+            unlock()
+        }
         lock()
+        
         if expectArchiveIndex != actualArchiveIndex {
             actualArchiveIndex = expectArchiveIndex
             unitQueue.archive()
         }
-        unlock()
     }
 }
 

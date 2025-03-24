@@ -33,7 +33,6 @@ class AVMediaDataLoader: NSObject {
         close()
     }
     
-    
     public func close() {
         dataReader?.close()
         dataReader = nil

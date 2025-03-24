@@ -109,6 +109,9 @@ public class AVMediaCache: NSObject {
 public extension AVMediaCache {
     
     func mediaForAsset(url: URL) -> AVURLAsset {
+        defer {
+            unlock()
+        }
         
         lock()
         var asset: AVURLAsset
@@ -116,7 +119,6 @@ public extension AVMediaCache {
         // cache complete
         if let fileURL = AVMediaDataStorage.shared.completeFileURLWithURL(url) {
             asset = AVURLAsset(url: fileURL)
-            unlock()
             return asset
         }
         
@@ -139,7 +141,6 @@ public extension AVMediaCache {
                 currentReousrces[url] = internalProxies
             }
         }
-        unlock()
         return asset
     }
     
@@ -163,15 +164,15 @@ extension AVMediaCache {
     }
     
     private func clearInvaildProxies() {
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
-            self.lock()
-            let currentReousrces = self.currentReousrces
-            for (url, internalProxies) in currentReousrces {
-                let internalProxies = internalProxies.compactMap({ $0.target == nil ? nil : $0 })
-                self.currentReousrces[url] = internalProxies.isEmpty ? nil : internalProxies
-            }
-            self.unlock()
+        defer {
+            unlock()
+        }
+        lock()
+        
+        let currentReousrces = self.currentReousrces
+        for (url, internalProxies) in currentReousrces {
+            let internalProxies = internalProxies.compactMap({ $0.target == nil ? nil : $0 })
+            self.currentReousrces[url] = internalProxies.isEmpty ? nil : internalProxies
         }
     }
 }

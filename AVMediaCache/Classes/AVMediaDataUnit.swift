@@ -61,14 +61,13 @@ class AVMediaDataUnit: NSObject {
         
         commonInit()
     }
-    
-    deinit {
-        
-    }
-    
+
     private func commonInit() {
-        
+        defer {
+            unlock()
+        }
         lock()
+        
         // remove invalid items
         if !unitItemsInternal.isEmpty {
             var removal = [AVMediaDataUnitItem]()
@@ -84,11 +83,14 @@ class AVMediaDataUnit: NSObject {
         }
         // sort items
         sortUnitItems()
-        unlock()
     }
     
     private func sortUnitItems() {
+        defer {
+            unlock()
+        }
         lock()
+        
         unitItemsInternal = unitItemsInternal.sorted { unitItem1, unitItem2 in
             if unitItem1.offset < unitItem2.offset {
                 return true
@@ -97,12 +99,15 @@ class AVMediaDataUnit: NSObject {
             }
             return false
         }
-        unlock()
     }
     
     
     func allItems() -> [AVMediaDataUnitItem] {
+        defer {
+            unlock()
+        }
         lock()
+        
         var items = [AVMediaDataUnitItem]()
         if !unitItemsInternal.isEmpty {
             for item in unitItemsInternal {
@@ -111,20 +116,26 @@ class AVMediaDataUnit: NSObject {
                 }
             }
         }
-        unlock()
         return items
     }
     
     func insertUnitItem(_ unitItem: AVMediaDataUnitItem) {
+        defer {
+            unlock()
+        }
         lock()
+        
         unitItemsInternal.append(unitItem)
         sortUnitItems()
-        unlock()
         delegate?.mediaCacheUnitChangeMetaData(self, forceArchive: false)
     }
     
     func updateResponseHeaders(_ responseHeaders: [String: String], totalLength: Int64) {
+        defer {
+            unlock()
+        }
         lock()
+        
         var needUpdate = false
         let whiteList: [String] = ["Accept-Ranges", "Connection", "Content-Type", "Server"]
         var headers = [String: String]()
@@ -142,37 +153,46 @@ class AVMediaDataUnit: NSObject {
             self.responseHeaders = headers
             needUpdate = true
         }
-        unlock()
         if needUpdate {
             delegate?.mediaCacheUnitChangeMetaData(self, forceArchive: false)
         }
     }
     
     func fileURL() -> URL? {
+        defer {
+            unlock()
+        }
         lock()
+        
         var fileURL: URL?
         if let item = unitItemsInternal.first,
            item.offset == 0, item.length > 0, item.length == totalLength {
             fileURL = NSURL(fileURLWithPath: item.absolutePath) as URL
         }
-        unlock()
         return fileURL
     }
     
     func cacheLength() -> Int64 {
+        defer {
+            unlock()
+        }
         lock()
+        
         var length: Int64 = 0
         if !unitItemsInternal.isEmpty {
             for item in unitItemsInternal {
                 length += item.length
             }
         }
-        unlock()
         return length
     }
     
     func validLength() -> Int64 {
+        defer {
+            unlock()
+        }
         lock()
+        
         var offset: Int64 = 0
         var length: Int64 = 0
         for item in unitItemsInternal {
@@ -181,12 +201,15 @@ class AVMediaDataUnit: NSObject {
             offset = max(offset, item.offset + item.length)
             length += vaildLength
         }
-        unlock()
         return length
     }
     
     func lastItemCreateInterval() -> TimeInterval {
+        defer {
+            unlock()
+        }
         lock()
+        
         var timeInterval = createTimeInterval
         if !unitItemsInternal.isEmpty {
             for item in unitItemsInternal {
@@ -195,52 +218,59 @@ class AVMediaDataUnit: NSObject {
                 }
             }
         }
-        unlock()
         return timeInterval
     }
     
     func workingRetain() {
+        defer {
+            unlock()
+        }
         lock()
-        self.workingCount += 1
-        unlock()
+        
+        workingCount += 1
     }
     
     func workingRelease() {
+        defer {
+            unlock()
+        }
         lock()
-        self.workingCount -= 1
+        
+        workingCount -= 1
         let needUpdate = mergeFilesIfNeeded()
-        unlock()
         if needUpdate {
             delegate?.mediaCacheUnitChangeMetaData(self, forceArchive: true)
         }
     }
     
     func deleteFiles() {
+        defer {
+            unlock()
+        }
+        lock()
         
         guard let url = url else { return }
-        lock()
         let path = AVMediaPathUtil.directoryPathWithURL(url)
         AVMediaPathUtil.deleteDirectoryAtPath(path)
-        unlock()
     }
     
     func mergeFilesIfNeeded() -> Bool {
-        lock()
-        if workingCount > 0 || totalLength == 0 || unitItemsInternal.isEmpty {
+        defer {
             unlock()
+        }
+        lock()
+        
+        if workingCount > 0 || totalLength == 0 || unitItemsInternal.isEmpty {
             return false
         }
         guard let path = AVMediaPathUtil.completeFilePathWithURL(url) else {
-            unlock()
             return false
         }
         guard let absolutePath = unitItemsInternal.first?.absolutePath, absolutePath != path else {
-            unlock()
             return false
         }
         let validLength = validLength()
         if totalLength != validLength {
-            unlock()
             return false
         }
         // start merge
@@ -322,13 +352,11 @@ class AVMediaDataUnit: NSObject {
             err = error
         }
         if let _ = err {
-            unlock()
             return false
         }
         let fileSize = AVMediaPathUtil.sizeAtPath(path)
         if fileSize != totalLength {
             AVMediaPathUtil.deleteFileAtPath(path)
-            unlock()
             return false
         }
         let item = AVMediaDataUnitItem(path: path, offset: 0)
@@ -337,7 +365,6 @@ class AVMediaDataUnit: NSObject {
         }
         unitItemsInternal.removeAll()
         unitItemsInternal.append(item)
-        unlock()
         return true
     }
 }
@@ -379,6 +406,7 @@ extension AVMediaDataUnit: NSLocking {
     }
     
     func unlock() {
+        coreLock.unlock()
         if !lockingUnitItems.isEmpty {
             let unitItemsInternal = lockingUnitItems.removeLast()
             if !unitItemsInternal.isEmpty {
@@ -387,6 +415,5 @@ extension AVMediaDataUnit: NSLocking {
                 }
             }
         }
-        coreLock.unlock()
     }
 }

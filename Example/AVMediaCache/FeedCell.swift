@@ -41,7 +41,7 @@ class FeedCell: UITableViewCell {
         // Configure the view for the selected state
     }
 
-    override init(style: UITableViewCellStyle, reuseIdentifier: String?) {
+    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         
         duration = 0
@@ -103,7 +103,7 @@ class FeedCell: UITableViewCell {
             make.width.equalTo(0)
         }
         
-        indicatorView = UIActivityIndicatorView(activityIndicatorStyle: .whiteLarge)
+        indicatorView = UIActivityIndicatorView(style: .whiteLarge)
         contentView.addSubview(indicatorView)
         indicatorView.snp.makeConstraints { make in
             make.centerX.equalToSuperview()
@@ -224,7 +224,7 @@ class FeedCell: UITableViewCell {
     
     @objc func handlePlayEnd(_ notif: Notification) {
         if let item = notif.object as? NSObject, item == playItem {
-            player?.seek(to: CMTime(seconds: 0, preferredTimescale: .max), toleranceBefore: kCMTimeZero, toleranceAfter: kCMTimeZero)
+            player?.seek(to: CMTime(seconds: 0, preferredTimescale: .max), toleranceBefore: CMTime.zero, toleranceAfter: CMTime.zero)
             player?.play()
         }
     }
@@ -254,7 +254,7 @@ class FeedCell: UITableViewCell {
             
             guard let _ = playItem else { return }
             
-            contentView.bringSubview(toFront: indicatorView)
+            contentView.bringSubviewToFront(indicatorView)
             indicatorView.isHidden = false
             indicatorView.startAnimating()
             

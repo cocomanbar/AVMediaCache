@@ -47,9 +47,13 @@ class AVMediaDownload: NSObject {
     // MARK: - Dispatch Request
     
     func downloadWithRequest(_ request: AVMediaDataRequest?, delegate: AVMediaDownloadDelegate?) -> URLSessionTask? {
+        defer {
+            unlock()
+        }
+        lock()
+        
         guard let request = request else { return nil }
         
-        lock()
         var urlRequest = URLRequest(url: request.url)
         urlRequest.timeoutInterval = timeoutInterval
         urlRequest.cachePolicy = .reloadIgnoringCacheData
@@ -73,8 +77,6 @@ class AVMediaDownload: NSObject {
         delegateDictionary[dataTask] = delegate
         dataTask.priority = 1.0
         dataTask.resume()
-        unlock()
-        
         return dataTask
     }
     
@@ -115,11 +117,13 @@ class AVMediaDownload: NSObject {
 extension AVMediaDownload: URLSessionDataDelegate {
     
     func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive response: URLResponse, completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
+        defer {
+            unlock()
+        }
         lock()
         
         guard let dataRequest = requestDictionary[dataTask] else {
             completionHandler(.cancel)
-            unlock()
             return
         }
         
@@ -180,13 +184,14 @@ extension AVMediaDownload: URLSessionDataDelegate {
             delegateDictionary[dataTask]?.mediaDownload(self, didReceiveResponse: dataResponse)
             completionHandler(.allow)
         }
-        
-        unlock()
     }
     
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
-        
+        defer {
+            unlock()
+        }
         lock()
+        
         var downloadError: NSError?
         if let error = error as? NSError {
             downloadError = NSError(domain: ErrorDomian,
@@ -204,19 +209,25 @@ extension AVMediaDownload: URLSessionDataDelegate {
         if delegateDictionary.isEmpty {
             endBackgroundTaskDelay()
         }
-        unlock()
     }
     
     func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
+        defer {
+            unlock()
+        }
         lock()
+        
         delegateDictionary[dataTask]?.mediaDownload(self, didReceiveData: data)
-        unlock()
     }
     
-    func urlSession(_ session: URLSession, task: URLSessionTask, willPerformHTTPRedirection response: HTTPURLResponse, newRequest request: URLRequest, completionHandler: @escaping (URLRequest?) -> Void) {
+    func urlSession(_ session: URLSession, task: URLSessionTask, willPerformHTTPRedirection response: HTTPURLResponse, 
+                    newRequest request: URLRequest, completionHandler: @escaping (URLRequest?) -> Void) {
+        defer {
+            unlock()
+        }
         lock()
+        
         completionHandler(request)
-        unlock()
     }
 }
 
@@ -224,11 +235,14 @@ extension AVMediaDownload: URLSessionDataDelegate {
 extension AVMediaDownload {
     
     @objc private func applicationDidEnterBackground(_ notif: Notification) {
+        defer {
+            unlock()
+        }
         lock()
+        
         if !delegateDictionary.isEmpty {
             beginBackgroundTask()
         }
-        unlock()
     }
     
     @objc private func applicationWillEnterForeground(_ notif: Notification) {
@@ -250,11 +264,14 @@ extension AVMediaDownload {
     
     private func endBackgroundTaskDelay() {
         DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+            defer {
+                self.unlock()
+            }
             self.lock()
+            
             if self.delegateDictionary.isEmpty {
                 self.endBackgroundTask()
             }
-            self.unlock()
         }
     }
 }

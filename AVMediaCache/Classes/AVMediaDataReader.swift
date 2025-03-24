@@ -56,42 +56,41 @@ class AVMediaDataReader: NSObject {
         self.request = request.newRequestWithTotalLength(totalLength)
     }
     
-    deinit {
-        
-    }
-    
-    
     func prepare() {
-        
-        lock()
-        if isClosed || calledPrepare {
+        defer {
             unlock()
+        }
+        lock()
+        
+        if isClosed || calledPrepare {
             return
         }
         calledPrepare = true
         prepareSourceManager()
-        unlock()
     }
     
     func close() {
-        
-        lock()
-        if isClosed {
+        defer {
             unlock()
+        }
+        lock()
+        
+        if isClosed {
             return
         }
         isClosed = true
         sourceManager?.close()
         unit?.workingRelease()
         unit = nil
-        unlock()
     }
     
     func readDataOfLength(_ length: Int64?) -> Data? {
-        
-        lock()
-        if isClosed || isFinished || self.error != nil {
+        defer {
             unlock()
+        }
+        lock()
+        
+        if isClosed || isFinished || self.error != nil {
             return nil
         }
         let data: Data? = sourceManager?.readDataOfLength(length)
@@ -105,7 +104,6 @@ class AVMediaDataReader: NSObject {
             isFinished = true
             close()
         }
-        unlock()
         return data
     }
     
@@ -195,28 +193,36 @@ class AVMediaDataReader: NSObject {
 extension AVMediaDataReader: AVMediaDataSourceManagerDelegate {
     
     func sourceManagerDidPrepare(_ sourceManager: AVMediaDataSourceManager) {
+        defer {
+            unlock()
+        }
         lock()
+        
         callbackForPrepared()
-        unlock()
     }
     
     func sourceManagerHasAvailableData(_ sourceManager: AVMediaDataSourceManager) {
-        lock()
-        if isClosed {
+        defer {
             unlock()
+        }
+        lock()
+        
+        if isClosed {
             return
         }
         delegateQueue.async { [weak self] in
             guard let self = self else { return }
             self.delegate?.dataReaderHasAvailableData(self)
         }
-        unlock()
     }
     
     func sourceManager(_ sourceManager: AVMediaDataSourceManager, didFailWithError error: Error) {
-        lock()
-        if isClosed || self.error != nil {
+        defer {
             unlock()
+        }
+        lock()
+        
+        if isClosed || self.error != nil {
             return
         }
         self.error = error
@@ -225,16 +231,18 @@ extension AVMediaDataReader: AVMediaDataSourceManagerDelegate {
             guard let self = self else { return }
             self.delegate?.dataReader(self, didFailWithError: error)
         }
-        unlock()
     }
     
     func sourceManager(_ sourceManager: AVMediaDataSourceManager, didReceiveResponse response: AVMediaDataResponse?) {
+        defer {
+            unlock()
+        }
         lock()
+        
         if let header = response?.header, let totalLength = response?.totalLength {
             unit?.updateResponseHeaders(header, totalLength: totalLength)
         }
         callbackForPrepared()
-        unlock()
     }
     
 }

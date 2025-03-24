@@ -50,11 +50,6 @@ class AVMediaDataFileSource: NSObject, AVMediaDataSource {
         super.init()
     }
     
-    deinit {
-        
-    }
-    
-    
     func prepareDelegate(_ delegate: AVMediaDataFileSourceDelegate, delegateQueue: DispatchQueue) {
         self.delegate = delegate
         self.delegateQueue = delegateQueue
@@ -62,9 +57,12 @@ class AVMediaDataFileSource: NSObject, AVMediaDataSource {
     
     func prepare() {
         
-        lock()
-        if isPrepared {
+        defer {
             unlock()
+        }
+        lock()
+        
+        if isPrepared {
             return
         }
         isPrepared = true
@@ -79,10 +77,7 @@ class AVMediaDataFileSource: NSObject, AVMediaDataSource {
         } catch {
             err = error
         }
-        guard let delegate = delegate, let delegateQueue = delegateQueue else {
-            unlock()
-            return
-        }
+        guard let delegate = delegate, let delegateQueue = delegateQueue else { return }
         if let err = err {
             let error = NSError(domain: ErrorDomian,
                                 code: ErrorCode,
@@ -97,27 +92,31 @@ class AVMediaDataFileSource: NSObject, AVMediaDataSource {
                 delegate.fileSourceDidPrepare(self)
             }
         }
-        unlock()
     }
     
     func close() {
-        lock()
-        if isClosed {
+        defer {
             unlock()
+        }
+        lock()
+        
+        if isClosed {
             return
         }
         isClosed = true
         destoryReadingHandle()
-        unlock()
     }
     
     func readDataOfLength(_ length: Int64?) -> Data? {
+        defer {
+            unlock()
+        }
         lock()
+        
         var err: Error?
         var data: Data?
         
         if isClosed || isFinished {
-            unlock()
             return data
         }
         do {
@@ -144,7 +143,6 @@ class AVMediaDataFileSource: NSObject, AVMediaDataSource {
                 isFinished = true
             }
         }
-        unlock()
         return data
     }
     

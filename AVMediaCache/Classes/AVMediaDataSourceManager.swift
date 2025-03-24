@@ -54,15 +54,13 @@ class AVMediaDataSourceManager: NSObject, AVMediaDataSource {
         super.init()
     }
     
-    deinit {
-        
-    }
-    
-    
     func prepare() {
-        lock()
-        if isClosed || calledPrepare {
+        defer {
             unlock()
+        }
+        lock()
+        
+        if isClosed || calledPrepare {
             return
         }
         calledPrepare = true
@@ -87,26 +85,30 @@ class AVMediaDataSourceManager: NSObject, AVMediaDataSource {
         currentSource = sources.first
         currentSource?.prepare()
         currentNetworkSource?.prepare()
-        unlock()
     }
     
     func close() {
-        lock()
-        if isClosed {
+        defer {
             unlock()
+        }
+        lock()
+        
+        if isClosed {
             return
         }
         isClosed = true
         for source in sources {
             source.close()
         }
-        unlock()
     }
     
     func readDataOfLength(_ length: Int64?) -> Data? {
-        lock()
-        if isClosed || isFinished || self.error != nil {
+        defer {
             unlock()
+        }
+        lock()
+        
+        if isClosed || isFinished || self.error != nil {
             return nil
         }
         let data: Data? = currentSource?.readDataOfLength(length)
@@ -123,7 +125,6 @@ class AVMediaDataSourceManager: NSObject, AVMediaDataSource {
                 isFinished = true
             }
         }
-        unlock()
         return data
     }
     
@@ -206,18 +207,22 @@ class AVMediaDataSourceManager: NSObject, AVMediaDataSource {
 extension AVMediaDataSourceManager: AVMediaDataFileSourceDelegate {
     
     func fileSourceDidPrepare(_ source: AVMediaDataFileSource) {
+        defer {
+            unlock()
+        }
         lock()
+        
         callbackForPrepared()
-        unlock()
-        lock()
         callbackForHasAvailableData()
-        unlock()
     }
     
     func fileSource(_ source: AVMediaDataFileSource, didFailWithError error: Error) {
+        defer {
+            unlock()
+        }
         lock()
+        
         callbackForFailed(error)
-        unlock()
     }
 }
 
@@ -225,29 +230,41 @@ extension AVMediaDataSourceManager: AVMediaDataFileSourceDelegate {
 extension AVMediaDataSourceManager: AVMediaDataNetworkSourceDelegate {
     
     func networkSourceDidPrepare(_ source: AVMediaDataNetworkSource) {
+        defer {
+            unlock()
+        }
         lock()
+        
         callbackForPrepared()
         callbackForReceiveResponse(source.response)
-        unlock()
     }
     
     func networkSourceHasAvailableData(_ source: AVMediaDataNetworkSource) {
+        defer {
+            unlock()
+        }
         lock()
+        
         callbackForHasAvailableData()
-        unlock()
     }
     
     func networkSourceDidFinisheDownload(_ source: AVMediaDataNetworkSource) {
+        defer {
+            unlock()
+        }
         lock()
+        
         currentNetworkSource = nextNetworkSource()
         currentNetworkSource?.prepare()
-        unlock()
     }
     
     func networkSource(_ source: AVMediaDataNetworkSource, didFailWithError error: Error) {
+        defer {
+            unlock()
+        }
         lock()
+        
         callbackForFailed(error)
-        unlock()
     }
 }
 

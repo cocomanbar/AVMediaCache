@@ -27,10 +27,6 @@ class AVMediaDataResponse: NSObject {
         commonInit()
     }
     
-    deinit {
-        
-    }
-    
     // MARK: - commonInit
     
     private func commonInit() {
